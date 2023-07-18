@@ -8,6 +8,7 @@
 import React from 'react';
 import type {PropsWithChildren} from 'react';
 import {
+  Button,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -24,6 +25,7 @@ import {
   LearnMoreLinks,
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
+import Home from './src/features/home/components/HomeScreen';
 
 type SectionProps = PropsWithChildren<{
   title: string;
@@ -56,14 +58,29 @@ function Section({children, title}: SectionProps): JSX.Element {
 }
 
 function App(): JSX.Element {
-  
   const isDarkMode = useColorScheme() === 'dark';
-  
+
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
-  console.log("loggg");
+  console.log('loggg 2');
   // return null
+  const blockJS = () => {
+    const date = Date.now() + 5000;
+    while (Date.now() < date) {}
+  };
+
+  return (
+    <SafeAreaView
+      style={{
+        flex: 1,
+        // alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+      <Home />
+      <Button title="Press" onPress={blockJS} />
+    </SafeAreaView>
+  );
 
   return (
     <SafeAreaView style={backgroundStyle}>
@@ -81,9 +98,8 @@ function App(): JSX.Element {
           }}>
           <Section title="Step One">
             Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-            screen and then come back to see your edits.
-            screen and then come back to see your edits.
+            screen and then come back to see your edits. screen and then come
+            back to see your edits. screen and then come back to see your edits.
           </Section>
           <Section title="See Your Changes">
             <ReloadInstructions />
