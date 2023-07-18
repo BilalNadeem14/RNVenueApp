@@ -2,7 +2,7 @@ import {StyleSheet, Text, View} from 'react-native';
 import React from 'react';
 
 const Card = props => {
-  //   console.log('data: ', props.data, props.index);
+  console.log('Card data: ', props.data, props.index);
 
   return (
     <View style={styles.cardContainer}>
@@ -11,7 +11,7 @@ const Card = props => {
   );
 };
 
-export default Card;
+export default React.memo(Card);
 
 const styles = StyleSheet.create({
   cardContainer: {

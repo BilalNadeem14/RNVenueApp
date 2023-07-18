@@ -1,136 +1,107 @@
-import {FlatList, StyleSheet, Text, View} from 'react-native';
-import React, {useEffect, useState} from 'react';
+import {FlatList, StyleSheet, View} from 'react-native';
+import React, {useEffect, useState, useRef} from 'react';
 import MapView, {Marker} from 'react-native-maps';
 import Card from '../Card';
+import {ResponseObjectType} from '../../types';
 
 export default function Home() {
-  const [res, setRes] = useState({});
-  const [state, setState] = useState({
-    markers: [
-      {
-        region: {
-          latitude: 24.860966,
-          longitude: 66.990501,
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421,
-        },
-        title: 'abcd',
-        description: 'abcdefg',
-      },
-    ],
-    region: {
-      latitude: 24.860966,
-      longitude: 66.990501,
-      latitudeDelta: 0.0922,
-      longitudeDelta: 0.0421,
-    },
-  });
+  const [res, setRes] = useState<ResponseObjectType | {}>({});
+  const [resItems, setResItems] = useState<Object[]>([]);
   const [currentCard, setCurrentCard] = useState();
-  console.log('currentCard: ', currentCard);
+  const currentCardRef = useRef();
 
-  const onViewableItemsChanged = React.useRef(({viewableItems, changed}) => {
-    console.log('Visible items are', viewableItems);
-    if (viewableItems.length > 0) {
-      setCurrentCard(viewableItems[0]);
-    }
-    console.log('Changed in this iteration', changed);
-  }).current;
-  useEffect(() => {
-    fetch('https://cx6bmbl1e3.execute-api.us-east-2.amazonaws.com/venues')
+  const apiCall = (url?: string) => {
+    console.log('apiCall: ');
+
+    fetch(
+      url ?? 'https://cx6bmbl1e3.execute-api.us-east-2.amazonaws.com/venues',
+    )
       .then(response => response.json())
       .then(data => {
         setRes(data);
-        console.log(data);
+        if (url) {
+          setResItems([...resItems, ...data?.results]);
+        } else {
+          setResItems([...data?.results]);
+          setCurrentCard(data.results[0]);
+        }
       })
       .catch(error => {
         console.error('Error:', error);
       });
-  }, []);
-  console.log('state: ', state);
-  console.log('response: ', res?.results);
-
-  const onRegionChange = () => {};
-  const viewabilityConfig = {
-    itemVisiblePercentThreshold: 80, // Item is considered viewable if 50% of it is visible
   };
+
+  useEffect(() => {
+    apiCall();
+  }, []);
+  console.log('response: ', res); //?.results
+  // const onViewableItemsChanged = React.useCallback(
+  //   ({viewableItems, changed}) => {
+  //     console.log('onViewableItemsChanged');
+  //     if (viewableItems.length > 0) {
+  //       currentCardRef.current = viewableItems[0].item;
+  //       setCurrentCard(currentCardRef.current);
+  //     }
+  //   },
+  //   [],
+  // );
+  const onViewableItemsChanged = React.useRef(({viewableItems, changed}) => {
+    console.log('onViewableItemsChanged');
+
+    if (viewableItems.length > 0) {
+      currentCardRef.current = viewableItems[0].item;
+      setCurrentCard(currentCardRef.current);
+    }
+  }).current;
+
+  const viewabilityConfig = {
+    itemVisiblePercentThreshold: 80,
+  };
+
   return (
     <View style={styles.container}>
-      {/* <Card /> */}
-      <View style={{}}>
-        {/* height: 200 */}
-        {res?.results && (
+      <View>
+        {resItems && ( //res?.results
           <FlatList
-            renderItem={item => {
-              // console.log('renderItem');
-
-              return <Card data={item.item} index={item.index} />;
-            }}
-            data={res?.results || []}
+            renderItem={item => <Card data={item.item} index={item.index} />}
+            data={resItems || []} //res?.results
             horizontal
-            // getItemLayout={(data, index) => {
-            //   console.log('getItemgetItem: ', data, index);
-            //   return {
-            //     length: 200,
-            //     offset: 200 * index,
-            //     index,
-            //   };
-            // }} //this.getItemLayout(data, index)
-            // initialScrollIndex={3}
-            // getItem={(data, index) => {
-            //   console.log('dataaa: ', data, index);
-            //   return data;
-            // }}
+            keyExtractor={item => {
+              // console.log('keyExtractor item: ', item);
+
+              return item?.id?.toString();
+            }}
             viewabilityConfig={viewabilityConfig}
             onViewableItemsChanged={onViewableItemsChanged}
+            onEndReachedThreshold={0.8}
+            onEndReached={() => apiCall(res?.next_url)}
+            showsHorizontalScrollIndicator={false}
           />
         )}
       </View>
 
-      {/* <MapView
-        style={{flex: 1}}
-        initialRegion={{
-          latitude: 24.860966,
-          longitude: 66.990501,
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421,
-        }}
-        region={state}
-        onRegionChange={setState}
-      /> */}
-      {res?.results && (
+      {currentCard && (
         <MapView
           region={{
-            latitude: currentCard
-              ? currentCard?.item?.lat
-              : res?.results[0]?.lat,
-            longitude: currentCard
-              ? currentCard?.item?.lon
-              : res?.results[0]?.lon,
+            latitude: currentCard.lat,
+            longitude: currentCard.lon,
             latitudeDelta: 0.00122,
             longitudeDelta: 0.0121,
-            // marker.region
-          }} //{state.region}
-          style={{flex: 1}}
-          // onRegionChange={onRegionChange}
-        >
-          {res?.results &&
-            res?.results.map((marker, index) => {
-              // console.log('res arr: ', marker);
-
-              return (
-                <Marker
-                  key={index}
-                  coordinate={{
-                    latitude: marker?.lat,
-                    longitude: marker?.lon,
-                    // marker.region
-                  }}
-                  // coordinate={state.region}
-                  title={marker.name}
-                  description={marker.address}
-                />
-              );
-            })}
+          }}
+          style={{flex: 1}}>
+          {resItems.map(
+            (
+              marker,
+              index, //res.results
+            ) => (
+              <Marker
+                key={index}
+                coordinate={{latitude: marker.lat, longitude: marker.lon}}
+                title={marker.name}
+                description={marker.address}
+              />
+            ),
+          )}
         </MapView>
       )}
     </View>

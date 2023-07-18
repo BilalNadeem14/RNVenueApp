@@ -63,12 +63,6 @@ function App(): JSX.Element {
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
-  console.log('loggg 2');
-  // return null
-  const blockJS = () => {
-    const date = Date.now() + 5000;
-    while (Date.now() < date) {}
-  };
 
   return (
     <SafeAreaView
