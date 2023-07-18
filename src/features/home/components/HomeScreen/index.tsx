@@ -2,13 +2,13 @@ import {FlatList, StyleSheet, View} from 'react-native';
 import React, {useEffect, useState, useRef} from 'react';
 import MapView, {Marker} from 'react-native-maps';
 import Card from '../Card';
-import {ResponseObjectType} from '../../types';
+import {ResponseObjectType, Result} from '../../types';
 
 export default function Home() {
   const [res, setRes] = useState<ResponseObjectType | {}>({});
-  const [resItems, setResItems] = useState<Object[]>([]);
-  const [currentCard, setCurrentCard] = useState();
-  const currentCardRef = useRef();
+  const [resItems, setResItems] = useState<Result[]>([]);
+  const [currentCard, setCurrentCard] = useState<Result | undefined>();
+  const currentCardRef = useRef<Result | null>(null);
 
   const apiCall = (url?: string) => {
     console.log('apiCall: ');
@@ -17,7 +17,7 @@ export default function Home() {
       url ?? 'https://cx6bmbl1e3.execute-api.us-east-2.amazonaws.com/venues',
     )
       .then(response => response.json())
-      .then(data => {
+      .then((data: ResponseObjectType) => {
         setRes(data);
         if (url) {
           setResItems([...resItems, ...data?.results]);
@@ -34,25 +34,17 @@ export default function Home() {
   useEffect(() => {
     apiCall();
   }, []);
-  console.log('response: ', res); //?.results
-  // const onViewableItemsChanged = React.useCallback(
-  //   ({viewableItems, changed}) => {
-  //     console.log('onViewableItemsChanged');
-  //     if (viewableItems.length > 0) {
-  //       currentCardRef.current = viewableItems[0].item;
-  //       setCurrentCard(currentCardRef.current);
-  //     }
-  //   },
-  //   [],
-  // );
-  const onViewableItemsChanged = React.useRef(({viewableItems, changed}) => {
-    console.log('onViewableItemsChanged');
 
-    if (viewableItems.length > 0) {
-      currentCardRef.current = viewableItems[0].item;
-      setCurrentCard(currentCardRef.current);
-    }
-  }).current;
+  const onViewableItemsChanged = useRef(
+    (info: {viewableItems: Array<{item: Result}>; changed: Array<any>}) => {
+      console.log('onViewableItemsChanged');
+
+      if (info.viewableItems.length > 0) {
+        currentCardRef.current = info.viewableItems[0].item;
+        setCurrentCard(currentCardRef.current);
+      }
+    },
+  ).current;
 
   const viewabilityConfig = {
     itemVisiblePercentThreshold: 80,
@@ -61,20 +53,16 @@ export default function Home() {
   return (
     <View style={styles.container}>
       <View>
-        {resItems && ( //res?.results
+        {resItems && (
           <FlatList
-            renderItem={item => <Card data={item.item} index={item.index} />}
-            data={resItems || []} //res?.results
+            renderItem={({item, index}) => <Card data={item} index={index} />}
+            data={resItems}
             horizontal
-            keyExtractor={item => {
-              // console.log('keyExtractor item: ', item);
-
-              return item?.id?.toString();
-            }}
+            keyExtractor={(item: Result) => item?.id?.toString()}
             viewabilityConfig={viewabilityConfig}
             onViewableItemsChanged={onViewableItemsChanged}
             onEndReachedThreshold={0.8}
-            onEndReached={() => apiCall(res?.next_url)}
+            onEndReached={() => apiCall((res as ResponseObjectType)?.next_url)}
             showsHorizontalScrollIndicator={false}
           />
         )}
@@ -88,20 +76,15 @@ export default function Home() {
             latitudeDelta: 0.00122,
             longitudeDelta: 0.0121,
           }}
-          style={{flex: 1}}>
-          {resItems.map(
-            (
-              marker,
-              index, //res.results
-            ) => (
-              <Marker
-                key={index}
-                coordinate={{latitude: marker.lat, longitude: marker.lon}}
-                title={marker.name}
-                description={marker.address}
-              />
-            ),
-          )}
+          style={styles.container}>
+          {resItems.map((marker: Result, index: number) => (
+            <Marker
+              key={index}
+              coordinate={{latitude: marker.lat, longitude: marker.lon}}
+              title={marker.name}
+              description={marker.address}
+            />
+          ))}
         </MapView>
       )}
     </View>
